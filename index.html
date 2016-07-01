@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Demo of Proof of Work</title>
+</head>
+
+<body>
+
+<div>
+    <fieldset>
+        <legend>Proof of Work inputs</legend>
+
+        <p>
+            <label for="input-text">
+                Input Text for Hash: <input type="text" id="input-text" name="input-text" />
+            </label>
+        </p>
+        
+        <p>
+            <label for="leading-zeros">
+                Difficulty (number of leading zeros): <input value="1" type="number" min="1" max="30" id="leading-zeros" name"leading-zeros" />
+            </label>
+        </p>
+
+        <p>
+            <button id="start-pow">Start Proof of Work</button>
+        </p>
+    </fieldset>
+</div>
+
+<div>
+    <fieldset>
+        <legend>Proof of Work Results</legend>
+        <div id="results">
+
+        </div>
+    </fieldset>
+</div>
+
+<script src="sha256.js"></script>
+<script>
+    var btn        = document.getElementById('start-pow');
+    var results    = document.getElementById('results');
+    var inputText  = document.getElementById('input-text');
+    var inputZeros = document.getElementById('leading-zeros');
+
+    btn.addEventListener('click',function() {
+        results.innerHTML = "";
+        var text = inputText.value;
+        var difficulty = parseInt(inputZeros.value);
+
+        var prefix = "";
+        for (var j = 0; j < difficulty; j++) {
+            prefix += "0";
+        }
+        console.debug("Proof of Work difficulty",prefix);
+
+        var resultFound = false, i = 1, hashResult = "", startTimestamp = (new Date()).getTime();
+        while (resultFound === false) {
+            hashResult = sha256(text + i);
+            console.debug("sha256;" + i, hashResult);
+
+            results.innerHTML += '<div>' + i + ': ' + hashResult + '</div>';
+            i++;
+
+            if (hashResult.indexOf(prefix) === 0) { // result found
+                resultFound = true;
+                results.innerHTML += '<div> Seconds searched: ' + (((new Date()).getTime() - startTimestamp) / 1000) + '</div>';
+            }
+        }
+
+    });
+</script>
+
+
+</body>
+
+</html> 
