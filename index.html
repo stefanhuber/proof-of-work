@@ -1,78 +1,105 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<title>Demo of Proof of Work</title>
+    <title>Demo of Proof of Work</title>
+
+    <style>
+        #results { max-height: 200px; overflow-y: scroll; }
+    </style>
+
 </head>
 
 <body>
 
-<div>
-    <fieldset>
-        <legend>Proof of Work inputs</legend>
+    <div>
+        <fieldset>
+            <legend>Proof of work inputs</legend>
 
-        <p>
-            <label for="input-text">
-                Input Text for Hash: <input type="text" id="input-text" name="input-text" />
-            </label>
-        </p>
-        
-        <p>
-            <label for="leading-zeros">
-                Difficulty (number of leading zeros): <input value="1" type="number" min="1" max="30" id="leading-zeros" name"leading-zeros" />
-            </label>
-        </p>
+            <p>
+                <label for="input-text">
+                    Input text for hash:
+                    <input value="test string, change if you want" type="text" id="input-text" name="input-text" />
+                </label>
+            </p>
 
-        <p>
-            <button id="start-pow">Start Proof of Work</button>
-        </p>
-    </fieldset>
-</div>
+            <p>
+                <label for="leading-zeros">
+                    Difficulty (number of leading zeros):
+                    <input value="1" type="number" min="1" max="30" id="leading-zeros"
+                        name "leading-zeros" />
+                </label>
+            </p>
 
-<div>
-    <fieldset>
-        <legend>Proof of Work Results</legend>
-        <div id="results">
+            <p>
+                <button id="start-pow">Start proof of work</button>
+            </p>
+        </fieldset>
+    </div>
 
-        </div>
-    </fieldset>
-</div>
+    <div>
+        <fieldset>
+            <legend id="result-heading">Proof of work results</legend>
+            <div id="result">
 
-<script src="sha256.js"></script>
-<script>
-    var btn        = document.getElementById('start-pow');
-    var results    = document.getElementById('results');
-    var inputText  = document.getElementById('input-text');
-    var inputZeros = document.getElementById('leading-zeros');
+            </div>
+        </fieldset>
+    </div>
 
-    btn.addEventListener('click',function() {
-        results.innerHTML = "";
-        var text = inputText.value;
-        var difficulty = parseInt(inputZeros.value);
+    <script src="sha256.js"></script>
+    <script>
+        var btn = document.getElementById('start-pow');
+        var result = document.getElementById('result');
+        var resultHeading = document.getElementById('result-heading');
+        var inputText = document.getElementById('input-text');
+        var inputZeros = document.getElementById('leading-zeros');
 
-        var prefix = "";
-        for (var j = 0; j < difficulty; j++) {
-            prefix += "0";
-        }
-        console.debug("Proof of Work difficulty",prefix);
-
-        var resultFound = false, i = 1, hashResult = "", startTimestamp = (new Date()).getTime();
-        while (resultFound === false) {
-            hashResult = sha256(text + i);
-            console.debug("sha256;" + i, hashResult);
-
-            results.innerHTML += '<div>' + i + ': ' + hashResult + '</div>';
-            i++;
-
-            if (hashResult.indexOf(prefix) === 0) { // result found
-                resultFound = true;
-                results.innerHTML += '<div> Seconds searched: ' + (((new Date()).getTime() - startTimestamp) / 1000) + '</div>';
+        var getDifficulityPrefix = function(difficulty) {
+            var prefix = "";
+            for (var j = 0; j < difficulty; j++) {
+                prefix += "0";
             }
+            return prefix;
         }
 
-    });
-</script>
+        var proofOfWork = function(input, prefix, callback, nonce) {
+            nonce = nonce || 0;
+
+            setTimeout(function() {
+                var hashResult = sha256(input + "" + nonce);
+
+                if (hashResult.indexOf(prefix) === 0) { // result found
+                    callback(true, nonce, hashResult);
+                } else {
+                    callback(false, nonce, hashResult);
+                    proofOfWork(input, prefix, callback, nonce + 1);
+                }
+            });
+        }
+             
+        btn.addEventListener('click', function () {
+            result.innerHTML = "";
+            var text = inputText.value;
+            var difficulty = parseInt(inputZeros.value);
+            var startTimestamp = (new Date()).getTime();
+            var results = [];
+            
+            proofOfWork(text, getDifficulityPrefix(difficulty), function(found, nonce, hash) {
+                results.unshift(nonce + ': ' + hash);
+                if (results.length >= 20) {
+                    results.pop();
+                }
+
+                result.innerHTML = '';
+                for (var i = 0; i < results.length; i++) {
+                    result.innerHTML += '<div>' + results[i] + '</div>';
+                }                
+                resultHeading.innerHTML = 'Proof of work results (searched for ' + ( ((new Date()).getTime() - startTimestamp) / 1000 )  + ' seconds)';
+            });
+        });
+    </script>
 
 
 </body>
 
-</html> 
+</html>
